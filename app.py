@@ -1,7 +1,9 @@
 """Janela do Relatório do Condomínio: escolhe a pasta dos boletos e abre o relatório."""
+import sys
 import threading
 import tkinter as tk
 import webbrowser
+from pathlib import Path
 from tkinter import filedialog, ttk
 
 from extrair import BoletoInvalido, gerar
@@ -62,5 +64,10 @@ class App:
 
 if __name__ == "__main__":
     raiz = tk.Tk()
-    App(raiz)
+    app = App(raiz)
+    # Pasta arrastada sobre o ícone do programa (ou passada na linha de comando)
+    if len(sys.argv) > 1 and Path(sys.argv[1]).is_dir():
+        app.botao.state(["disabled"])
+        app.mostrar(f"Lendo os boletos de {sys.argv[1]}…")
+        threading.Thread(target=app.processar, args=(sys.argv[1],), daemon=True).start()
     raiz.mainloop()

@@ -13,7 +13,7 @@ O relatório mostra:
 
 1. Baixe o `RelatorioCondominio.exe` na página de [Releases](../../releases/latest).
 2. Salve os boletos em PDF numa pasta (o nome dos arquivos não importa; boletos repetidos são contados uma vez).
-3. Abra o programa, clique em **Selecionar pasta dos boletos** e escolha a pasta.
+3. Abra o programa, clique em **Selecionar pasta dos boletos** e escolha a pasta. Também dá para arrastar a pasta sobre o ícone do programa.
 
 O relatório (`relatorio.html`) é salvo na mesma pasta e abre no navegador. Junto ficam `dados.csv` (para abrir no Excel) e `dados.json`.
 
@@ -34,7 +34,7 @@ python extrair.py "C:\caminho\da\pasta\dos\boletos"
 
 ```bash
 pip install pypdf pyinstaller
-pyinstaller --onefile --windowed --name RelatorioCondominio --add-data "relatorio_modelo.html;." app.py
+pyinstaller --onefile --windowed --name RelatorioCondominio --add-data "relatorio_modelo.html;." --exclude-module cryptography --exclude-module PIL --exclude-module Crypto app.py
 ```
 
 O executável fica em `dist\RelatorioCondominio.exe`.
