@@ -1,0 +1,349 @@
+<title>Consumo do Condomínio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura (~760px); resposta primeiro, depois água, gás e composição do boleto. */
+:root {
+  --bg: #f7f8f8; --surface: #ffffff; --fg: #121417; --fg2: #4d535a; --muted: #858b91;
+  --grid: #e3e6e8; --axis: #c3c8cc; --ring: rgba(18,20,23,.10);
+  --agua: #2a78d6; --agua-soft: #cde2fb; --gas: #eb6834; --gas-soft: #fbd9c9;
+  --up: #b33a2e; --down: #006300;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --sans: "IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111315; --surface: #1a1c1e; --fg: #f3f4f5; --fg2: #c0c5ca; --muted: #8b9197;
+  --grid: #2a2d30; --axis: #3a3e42; --ring: rgba(255,255,255,.10);
+  --agua: #3987e5; --agua-soft: #1c3a5f; --gas: #d95926; --gas-soft: #4a2a1c;
+  --up: #f07a6e; --down: #3cc23c;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111315; --surface: #1a1c1e; --fg: #f3f4f5; --fg2: #c0c5ca; --muted: #8b9197;
+  --grid: #2a2d30; --axis: #3a3e42; --ring: rgba(255,255,255,.10);
+  --agua: #3987e5; --agua-soft: #1c3a5f; --gas: #d95926; --gas-soft: #4a2a1c;
+  --up: #f07a6e; --down: #3cc23c;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 780px; margin: 0 auto; padding: 32px 16px 64px; display: grid; gap: 40px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 1.9rem; font-weight: 600; letter-spacing: -.01em; }
+h2 { font-size: 1.3rem; font-weight: 600; }
+h3 { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+p { margin: 0; max-width: 66ch; }
+.sub { color: var(--fg2); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 16px; }
+header { display: grid; gap: 8px; }
+.meta { color: var(--muted); font-size: .85rem; }
+
+.resposta { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 20px; display: grid; gap: 14px; }
+.veredito { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.veredito > div { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.tag i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.kpi { display: grid; gap: 2px; }
+.kpi b { font-size: 1.35rem; font-weight: 500; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.kpi span { font-size: .8rem; color: var(--muted); }
+
+.chart { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 14px 14px 8px; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart svg text { fill: var(--muted); font: 11px var(--sans); }
+.chart svg text.val { fill: var(--fg2); font: 500 11px var(--mono); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; color: var(--fg2); margin-bottom: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend i.est { background: transparent !important; border: 1.5px dashed var(--muted); }
+
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+th, td { padding: 7px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td:first-child { font-family: var(--sans); }
+.up { color: var(--up); } .down { color: var(--down); }
+tr.total td { font-weight: 600; border-bottom: 0; }
+#tb-rateios td, #tb-comp td { vertical-align: top; }
+#tb-rateios small { font-size: .72rem; }
+#tb-rateios th:first-child, #tb-rateios td:first-child { position: sticky; left: 0; background: var(--bg); z-index: 1; }
+
+.tip { position: absolute; pointer-events: none; background: var(--fg); color: var(--bg); font-size: .78rem; padding: 6px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -110%); line-height: 1.4; }
+.notas { font-size: .85rem; color: var(--fg2); display: grid; gap: 6px; padding-left: 18px; margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h3 id="local"></h3>
+    <h1>Água, gás e o resto do boleto</h1>
+    <p class="sub" id="periodo"></p>
+  </header>
+
+  <section class="resposta" aria-labelledby="r-t">
+    <h2 id="r-t">Gastei mais ou o preço subiu?</h2>
+    <div class="veredito" id="veredito"></div>
+  </section>
+
+  <section id="sec-agua"></section>
+  <section id="sec-gas"></section>
+
+  <section>
+    <h2>Composição do boleto</h2>
+    <p class="sub">Quanto cada grupo de cobrança pesou em cada mês. Água e gás são a parte que depende de você; o resto é rateio do condomínio.</p>
+    <div class="chart" id="ch-comp"></div>
+    <div class="tbl" id="tb-comp"></div>
+  </section>
+
+  <section>
+    <h2>Rateios e extras, item a item</h2>
+    <p class="sub">Cobranças parceladas ou temporárias que o condomínio divide entre as unidades. Embaixo de cada valor aparece a parcela, e à direita, quando ela termina e quanto ainda falta pagar.</p>
+    <div class="tbl" id="tb-rateios"></div>
+  </section>
+
+  <section>
+    <h2>Como ler</h2>
+    <ul class="notas" id="notas"></ul>
+  </section>
+</div>
+
+<script>
+const DADOS = /*DADOS*/[];
+const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const rotulo = c => { const [a, m] = c.split("-"); return MESES[+m - 1] + "/" + a.slice(2); };
+const brl = (v, d = 2) => v.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const rs = v => "R$ " + brl(v);
+const sinal = (v, f = rs) => (v > 0.005 ? "+" : v < -0.005 ? "−" : "") + f(Math.abs(v)).replace("R$ ", "R$ ");
+const cls = v => v > 0.005 ? "up" : v < -0.005 ? "down" : "";
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+const addMes = (c, n) => { let [a, m] = c.split("-").map(Number); m += n; while (m > 12) { m -= 12; a++; } while (m < 1) { m += 12; a--; } return a + "-" + String(m).padStart(2, "0"); };
+
+{
+  const u = DADOS.at(-1), unidade = (u.unidade || "").replace(/\(\d+\)$/, "").trim();
+  document.getElementById("local").textContent = [u.condominio, unidade].filter(Boolean).join(" · ");
+  if (unidade) document.title = "Consumo " + unidade + (u.condominio ? " " + u.condominio : "");
+}
+document.getElementById("periodo").textContent =
+  `${DADOS.length} boletos, de ${rotulo(DADOS[0].competencia)} a ${rotulo(DADOS.at(-1).competencia)} (mês de competência). Valores lidos dos PDFs da Aliança.`;
+
+/* Linha do tempo mensal completa: meses com boleto + meses sem boleto estimados pelas leituras do hidrômetro */
+function serie(chave) {
+  const out = [];
+  for (let i = 0; i < DADOS.length; i++) {
+    const b = DADOS[i], x = b[chave];
+    if (i > 0) {
+      const ant = DADOS[i - 1];
+      const leituraIni = x.leitura - x.m3;          // leitura anterior a este boleto
+      const buraco = leituraIni - ant[chave].leitura; // consumo dos meses sem boleto
+      const meses = [];
+      for (let c = addMes(ant.competencia, 1); c < b.competencia; c = addMes(c, 1)) meses.push(c);
+      meses.forEach(c => out.push({ comp: c, m3: buraco / meses.length, est: true, nMeses: meses.length, totalBuraco: buraco }));
+    }
+    out.push({ comp: b.competencia, m3: x.m3, valor: x.valor, preco: x.preco_m3 });
+  }
+  return out;
+}
+
+const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true;
+function hover(target, box, html) {
+  target.addEventListener("mouseenter", () => { tip.innerHTML = html; tip.hidden = false; box.appendChild(tip); });
+  target.addEventListener("mousemove", e => { const r = box.getBoundingClientRect(); tip.style.left = (e.clientX - r.left) + "px"; tip.style.top = (e.clientY - r.top) + "px"; });
+  target.addEventListener("mouseleave", () => { tip.hidden = true; });
+}
+
+/* Barras de m³ por mês */
+function barras(box, pts, cor, soft, unidade) {
+  const W = 720, H = 220, L = 34, R = 6, T = 18, B = 26;
+  const max = Math.ceil(Math.max(...pts.map(p => p.m3)) / 10) * 10;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Consumo por mês em " + unidade });
+  const y = v => T + (H - T - B) * (1 - v / max);
+  for (let v = 0; v <= max; v += 10) {
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v ? "var(--grid)" : "var(--axis)", "stroke-width": 1 }, svg);
+    el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = v;
+  }
+  const bw = (W - L - R) / pts.length, w = Math.min(38, bw * .62);
+  pts.forEach((p, i) => {
+    const cx = L + bw * (i + .5), top = y(p.m3), h = y(0) - top;
+    const g = el("g", {}, svg);
+    el("rect", { x: cx - bw / 2, y: T, width: bw, height: H - T - B, fill: "transparent" }, g);
+    if (p.est) el("rect", { x: cx - w / 2 + .75, y: top + .75, width: w - 1.5, height: h - .75, rx: 3, fill: soft, stroke: "var(--muted)", "stroke-dasharray": "3 3", "stroke-width": 1.5 }, g);
+    else el("path", { d: `M${cx - w / 2},${y(0)} V${top + 4} q0,-4 4,-4 H${cx + w / 2 - 4} q4,0 4,4 V${y(0)} Z`, fill: cor }, g);
+    el("text", { x: cx, y: H - 8, "text-anchor": "middle" }, g).textContent = rotulo(p.comp);
+    if (!p.est) el("text", { x: cx, y: top - 5, "text-anchor": "middle", class: "val" }, g).textContent = brl(p.m3, 1);
+    hover(g, box, p.est
+      ? `<b>${rotulo(p.comp)}</b> · sem boleto<br>≈ ${brl(p.m3, 1)} ${unidade}${p.nMeses > 1 ? ` (média de ${brl(p.totalBuraco, 1)} em ${p.nMeses} meses)` : ""}`
+      : `<b>${rotulo(p.comp)}</b><br>${brl(p.m3, 3)} ${unidade} × R$ ${brl(p.preco, 4)} = ${rs(p.valor)}`);
+  });
+  box.appendChild(svg);
+}
+
+/* Linha do preço por m³ (gráfico próprio, sem eixo duplo) */
+function linhaPreco(box, pts, cor) {
+  pts = pts.filter(p => !p.est);
+  const W = 720, H = 120, L = 46, R = 10, T = 16, B = 24;
+  const vals = pts.map(p => p.preco), lo = Math.floor(Math.min(...vals) * 2) / 2 - .5, hi = Math.ceil(Math.max(...vals) * 2) / 2 + .25;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Preço por m³" });
+  const y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+  const todos = serie.cache; // eixo x compartilha a mesma grade de meses
+  const bw = (W - L - R) / todos.length, x = c => L + bw * (todos.findIndex(p => p.comp === c) + .5);
+  for (let v = Math.ceil(lo * 2) / 2; v <= hi; v += .5) {
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--grid)" }, svg);
+    el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = brl(v, 2);
+  }
+  el("path", { d: pts.map((p, i) => (i ? "L" : "M") + x(p.comp) + "," + y(p.preco)).join(" "), fill: "none", stroke: cor, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  pts.forEach((p, i) => {
+    const g = el("g", {}, svg);
+    el("circle", { cx: x(p.comp), cy: y(p.preco), r: 4.5, fill: cor, stroke: "var(--surface)", "stroke-width": 2 }, g);
+    el("circle", { cx: x(p.comp), cy: y(p.preco), r: 14, fill: "transparent" }, g);
+    const muda = i === 0 || Math.abs(p.preco - pts[i - 1].preco) > .005;
+    if (muda) el("text", { x: x(p.comp), y: y(p.preco) - 9, "text-anchor": "middle", class: "val" }, g).textContent = brl(p.preco, 2);
+    el("text", { x: x(p.comp), y: H - 6, "text-anchor": "middle" }, g).textContent = rotulo(p.comp);
+    hover(g, box, `<b>${rotulo(p.comp)}</b><br>R$ ${brl(p.preco, 4)} por m³`);
+  });
+  box.appendChild(svg);
+}
+
+/* Separa a variação de cada boleto em efeito consumo e efeito preço (vs. boleto anterior) */
+function decompor(pts) {
+  const reais = pts.filter(p => !p.est);
+  return reais.map((p, i) => {
+    if (!i) return { ...p };
+    const a = reais[i - 1];
+    return { ...p, ant: a, dTotal: p.valor - a.valor, dConsumo: (p.m3 - a.m3) * a.preco, dPreco: (p.preco - a.preco) * p.m3 };
+  });
+}
+
+function secao(chave, nome, cor, soft) {
+  const pts = serie(chave); serie.cache = pts;
+  const dec = decompor(pts), reais = dec;
+  const s = document.getElementById("sec-" + chave);
+  const p0 = reais[0], pN = reais.at(-1);
+  const m3s = reais.map(p => p.m3), media = m3s.reduce((a, b) => a + b, 0) / m3s.length;
+  const somaPreco = dec.slice(1).reduce((a, d) => a + d.dPreco, 0);
+  const somaConsumo = dec.slice(1).reduce((a, d) => a + d.dConsumo, 0);
+  const custoNoPrecoAntigo = pN.m3 * p0.preco;
+
+  s.innerHTML = `
+    <h2><span class="tag"><i style="background:${cor}"></i>${nome}</span></h2>
+    <div class="kpis">
+      <div class="kpi"><b>${brl(media, 1)} m³</b><span>média por boleto</span></div>
+      <div class="kpi"><b>${brl(Math.min(...m3s), 1)} – ${brl(Math.max(...m3s), 1)}</b><span>menor e maior consumo (m³)</span></div>
+      <div class="kpi"><b>R$ ${brl(p0.preco, 2)} → ${brl(pN.preco, 2)}</b><span>preço do m³, ${rotulo(p0.comp)} → ${rotulo(pN.comp)} (${sinal((pN.preco / p0.preco - 1) * 100, v => brl(v, 1))}%)</span></div>
+      <div class="kpi"><b>${rs(pN.valor - custoNoPrecoAntigo)}</b><span>quanto o aumento de preço pesou em ${rotulo(pN.comp)}</span></div>
+    </div>
+    <div class="chart"><div class="legend"><span><i style="background:${cor}"></i>m³ cobrados no boleto</span><span><i class="est"></i>sem boleto, estimado pelas leituras do medidor</span></div><div class="b"></div></div>
+    <h3>Preço cobrado por m³</h3>
+    <div class="chart"><div class="p"></div></div>
+    <div class="tbl"></div>`;
+  barras(s.querySelector(".b"), pts, cor, soft, "m³");
+  linhaPreco(s.querySelector(".p"), pts, cor);
+
+  const linhas = dec.map(d => `<tr><td>${rotulo(d.comp)}</td><td>${brl(d.m3, 3)}</td><td>${brl(d.preco, 4)}</td><td>${brl(d.valor)}</td>
+    ${d.ant ? `<td class="${cls(d.dTotal)}">${sinal(d.dTotal, v => brl(v))}</td><td class="${cls(d.dConsumo)}">${sinal(d.dConsumo, v => brl(v))}</td><td class="${cls(d.dPreco)}">${sinal(d.dPreco, v => brl(v))}</td>` : `<td colspan="3" style="text-align:center;color:var(--muted);font-family:var(--sans)">ponto de partida</td>`}</tr>`).join("");
+  s.querySelector(".tbl").innerHTML = `<table>
+    <thead><tr><th>Competência</th><th>m³</th><th>R$/m³</th><th>Valor R$</th><th>Variação</th><th>por consumo</th><th>por preço</th></tr></thead>
+    <tbody>${linhas}<tr class="total"><td>Acumulado ${rotulo(p0.comp)}→${rotulo(pN.comp)}</td><td></td><td></td><td></td>
+      <td class="${cls(pN.valor - p0.valor)}">${sinal(pN.valor - p0.valor, v => brl(v))}</td><td class="${cls(somaConsumo)}">${sinal(somaConsumo, v => brl(v))}</td><td class="${cls(somaPreco)}">${sinal(somaPreco, v => brl(v))}</td></tr></tbody></table>`;
+  return { pts, dec, p0, pN, media, somaPreco, somaConsumo, custoNoPrecoAntigo };
+}
+
+const A = secao("agua", "Água e esgoto", "var(--agua)", "var(--agua-soft)");
+const G = secao("gas", "Gás", "var(--gas)", "var(--gas-soft)");
+
+/* Veredito */
+function veredito(R, nome, cor) {
+  const precos = R.dec.map(d => d.preco), varia = (Math.max(...precos) - Math.min(...precos)) / Math.min(...precos) * 100;
+  const mudancas = R.dec.filter(d => d.ant && Math.abs(d.preco - d.ant.preco) > .005);
+  const m3s = R.dec.map(d => d.m3), amp = (Math.max(...m3s) - Math.min(...m3s)) / Math.min(...m3s) * 100;
+  const ultimo = R.dec.at(-1);
+  let txtPreco;
+  if (mudancas.length === 1) txtPreco = `O preço mudou uma vez: de R$ ${brl(mudancas[0].ant.preco, 2)} para R$ ${brl(mudancas[0].preco, 2)} por m³ em ${rotulo(mudancas[0].comp)} (${sinal((mudancas[0].preco / mudancas[0].ant.preco - 1) * 100, v => brl(v, 1))}%) e ficou parado desde então.`;
+  else txtPreco = `O preço por m³ oscila todo mês, entre R$ ${brl(Math.min(...precos), 2)} e R$ ${brl(Math.max(...precos), 2)} (faixa de ${brl(varia, 0)}%).`;
+  return `<div><span class="tag"><i style="background:${cor}"></i>${nome}</span>
+    <p>${txtPreco} Já o consumo variou ${brl(amp, 0)}% entre o menor e o maior mês. <b>A maior parte da diferença entre um boleto e outro vem do quanto você usou.</b></p>
+    <p class="sub">Em ${rotulo(ultimo.comp)}, ao preço de ${rotulo(R.p0.comp)}, você pagaria ${rs(R.custoNoPrecoAntigo)} em vez de ${rs(ultimo.valor)}.</p></div>`;
+}
+document.getElementById("veredito").innerHTML = veredito(A, "Água", "var(--agua)") + veredito(G, "Gás", "var(--gas)");
+
+/* Composição empilhada */
+const ORDEM = ["Condomínio (taxa ordinária)", "Água (seu consumo)", "Gás (seu consumo)", "Rateios e extras", "Reservas (salão, gourmet)", "Energia das áreas comuns", "Água comum e purificação", "Tarifa bancária", "Outros"].filter(g => g !== "Outros" || DADOS.some(b => b.grupos.Outros));
+const COR = { "Condomínio (taxa ordinária)": "var(--s7)", "Água (seu consumo)": "var(--s1)", "Gás (seu consumo)": "var(--s2)", "Rateios e extras": "var(--s3)", "Reservas (salão, gourmet)": "var(--s5)", "Energia das áreas comuns": "var(--s4)", "Água comum e purificação": "var(--s6)", "Tarifa bancária": "var(--s8)", "Outros": "var(--muted)" };
+(function () {
+  const box = document.getElementById("ch-comp");
+  const leg = document.createElement("div"); leg.className = "legend";
+  leg.innerHTML = ORDEM.map(g => `<span><i style="background:${COR[g]}"></i>${g}</span>`).join("");
+  box.appendChild(leg);
+  const W = 720, H = 260, L = 46, R = 6, T = 18, B = 26;
+  const max = Math.ceil(Math.max(...DADOS.map(b => b.total)) / 200) * 200;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Composição do boleto por mês" });
+  const y = v => T + (H - T - B) * (1 - v / max);
+  for (let v = 0; v <= max; v += 200) {
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v ? "var(--grid)" : "var(--axis)" }, svg);
+    el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = brl(v, 0);
+  }
+  const bw = (W - L - R) / DADOS.length, w = Math.min(56, bw * .6);
+  DADOS.forEach((b, i) => {
+    const cx = L + bw * (i + .5); let acc = 0;
+    ORDEM.forEach(g => {
+      const v = b.grupos[g] || 0; if (!v) return;
+      const y1 = y(acc), y2 = y(acc + v); acc += v;
+      const r = el("rect", { x: cx - w / 2, y: y2, width: w, height: Math.max(0, y1 - y2 - 2), fill: COR[g] }, svg);
+      hover(r, box, `<b>${rotulo(b.competencia)}</b> · ${g}<br>${rs(v)} (${brl(v / b.total * 100, 0)}% do boleto)`);
+    });
+    el("text", { x: cx, y: y(b.total) - 6, "text-anchor": "middle", class: "val" }, svg).textContent = brl(b.total, 0);
+    el("text", { x: cx, y: H - 8, "text-anchor": "middle" }, svg).textContent = rotulo(b.competencia);
+  });
+  box.appendChild(svg);
+
+  const cab = DADOS.map(b => `<th>${rotulo(b.competencia)}</th>`).join("");
+  const lin = ORDEM.map(g => `<tr><td><span class="tag" style="font-weight:400"><i style="background:${COR[g]}"></i>${g}</span></td>${DADOS.map(b => `<td>${b.grupos[g] ? brl(b.grupos[g]) : "–"}</td>`).join("")}</tr>`).join("");
+  document.getElementById("tb-comp").innerHTML = `<table><thead><tr><th>Grupo</th>${cab}</tr></thead><tbody>${lin}
+    <tr class="total"><td>Total</td>${DADOS.map(b => `<td>${brl(b.total)}</td>`).join("")}</tr></tbody></table>`;
+})();
+
+/* Rateios e extras detalhados */
+(function () {
+  const GRUPO = "Rateios e extras";
+  const NOMES = { "00083": "Recuperação de déficit", "00084": "Recuperação de saldo", "00090": "Seguro do condomínio", "00195": "Diferença do seguro", "02479": "IPTU", "02498": "Sistema de incêndio", "02791": "Instalação de câmeras" };
+  const linhas = {};
+  DADOS.forEach(b => b.itens.forEach(i => {
+    if (i.grupo !== GRUPO) return;
+    const m = i.descricao.match(/(\d{2})\/(\d{2})\s*\((GERAL|BV)\)/);
+    const L = linhas[i.codigo] ||= { nome: NOMES[i.codigo] || i.descricao.replace(/\s*\d{2}\/\d{2}.*$/, ""), base: m ? (m[3] === "BV" ? "BV" : "geral") : "", meses: {} };
+    L.meses[b.competencia] = { valor: i.valor, n: m ? +m[1] : null, de: m ? +m[2] : null };
+  }));
+  const ultimoMes = DADOS.at(-1).competencia;
+  const ord = Object.values(linhas).sort((a, b) => Object.keys(a.meses)[0].localeCompare(Object.keys(b.meses)[0]));
+  const cab = DADOS.map(b => `<th>${rotulo(b.competencia)}</th>`).join("");
+  const corpo = ord.map(L => {
+    const comps = Object.keys(L.meses).sort(), ult = comps.at(-1), u = L.meses[ult];
+    let fim = "–", falta = "–";
+    if (u.de) {
+      const termina = addMes(ult, u.de - u.n);
+      fim = termina <= ultimoMes ? `encerrado em ${rotulo(termina)}` : rotulo(termina);
+      falta = ult === ultimoMes && u.de > u.n ? `${brl(u.valor * (u.de - u.n))} <small style="color:var(--muted)">(${u.de - u.n}×)</small>` : "–";
+    }
+    const cel = DADOS.map(b => { const c = L.meses[b.competencia]; return c ? `<td>${brl(c.valor)}${c.n ? `<br><small style="color:var(--muted)">${c.n}/${c.de}</small>` : ""}</td>` : `<td style="color:var(--muted)">–</td>`; }).join("");
+    return `<tr><td>${L.nome}${L.base ? ` <small style="color:var(--muted)">· ${L.base}</small>` : ""}</td>${cel}<td style="font-family:var(--sans)">${fim}</td><td>${falta}</td></tr>`;
+  }).join("");
+  const totFalta = ord.reduce((s, L) => { const ult = Object.keys(L.meses).sort().at(-1), u = L.meses[ult]; return s + (u.de && ult === ultimoMes ? u.valor * (u.de - u.n) : 0); }, 0);
+  document.getElementById("tb-rateios").innerHTML = `<table><thead><tr><th>Item</th>${cab}<th>Termina</th><th>Falta pagar</th></tr></thead><tbody>${corpo}
+    <tr class="total"><td>Total do mês</td>${DADOS.map(b => `<td>${b.grupos[GRUPO] ? brl(b.grupos[GRUPO]) : "–"}</td>`).join("")}<td></td><td>${brl(totFalta)}</td></tr></tbody></table>`;
+})();
+
+/* Notas */
+const dups = DADOS.filter(b => b.duplicados).map(b => `${b.arquivo} = ${b.duplicados.join(", ")}`);
+const faltam = A.pts.filter(p => p.est).map(p => rotulo(p.comp));
+document.getElementById("notas").innerHTML = [
+  `<b>Por consumo</b> é quanto a conta mudaria se só os m³ tivessem mudado, mantendo o preço do boleto anterior. <b>Por preço</b> é o que sobra: a diferença de preço aplicada aos m³ do mês. As duas somam a variação.`,
+  `O preço por m³ é o valor da rubrica dividido pelos m³ informados no próprio boleto (água/esgoto: código 00260; gás: 00106).`,
+  faltam.length ? `Não há boleto para ${faltam.join(", ")}. As barras tracejadas usam a diferença entre leituras do medidor; quando falta mais de um mês seguido, o total do período aparece dividido igualmente.` : "",
+  dups.length ? `Arquivos repetidos foram contados uma vez só: ${dups.join("; ")}.` : "",
+  `"Água comum e purificação" é rateio do condomínio (área comum + purificação), separado do seu hidrômetro.`,
+].filter(Boolean).map(t => `<li>${t}</li>`).join("");
+</script>

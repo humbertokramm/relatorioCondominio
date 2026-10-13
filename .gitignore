@@ -1,0 +1,11 @@
+# Boletos e relatórios têm dados pessoais (nome, CPF, endereço, consumo)
+*.pdf
+dados.json
+dados.csv
+relatorio.html
+
+# Build do executável
+build/
+dist/
+*.spec
+__pycache__/
